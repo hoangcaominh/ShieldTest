@@ -21,8 +21,8 @@ namespace ShieldTest
 			}
 			else
 			{
-				HP = 50 + 9.0 * lvl;
-				ATK = 10 + 7.0 * lvl;
+				HP = 20 + 3.2 * lvl;
+				ATK = 10 + 2.6 * lvl;
 			}
 		}
 		Enemy(System::Double hp, System::Double atk)	// Custom
