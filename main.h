@@ -1,6 +1,7 @@
 #pragma once
 #include "enemy.h"
 #include <fstream>
+#include <cmath>
 
 namespace ShieldTest {
 
@@ -244,8 +245,8 @@ namespace ShieldTest {
 		FileStream^ data = gcnew FileStream("data.txt", FileMode::OpenOrCreate, FileAccess::Read);
 		if (data->Length == 0)
 		{
-			HP = HP_MAX = SP = SP_MAX = 30.0;
-			ATK = 16.0;
+			this->HP = this->HP_MAX = this->SP = this->SP_MAX = 30.0;
+			this->enemy->ATK = 16.0;
 			data->Close();
 			return;
 		}
@@ -264,16 +265,16 @@ namespace ShieldTest {
 	private: System::Void UpdateUI()
 	{
 		// Update UI
-		this->health_bar->Width = (System::Int32)((HP / HP_MAX) * 100);
-		this->hp_point->Text = (Math::Ceiling(HP) + L"/" + Math::Ceiling(HP_MAX));
-		this->shield_bar->Width = (System::Int32)((SP / SP_MAX) * 100);
-		this->sp_point->Text = (Math::Ceiling(SP) + L"/" + Math::Ceiling(SP_MAX));
+		this->health_bar->Width = (System::Int32)((this->HP / this->HP_MAX) * 100);
+		this->hp_point->Text = (Math::Ceiling(this->HP) + L"/" + Math::Ceiling(this->HP_MAX));
+		this->shield_bar->Width = (System::Int32)((this->SP / this->SP_MAX) * 100);
+		this->sp_point->Text = (Math::Ceiling(this->SP) + L"/" + Math::Ceiling(this->SP_MAX));
 
-		if (Math::Ceiling(HP) < Math::Ceiling(HP_MAX))
+		if (Math::Ceiling(HP) < Math::Ceiling(this->HP_MAX))
 		{
 			this->heal_button->Enabled = true;
 		}
-		if (Math::Ceiling(SP) < Math::Ceiling(SP_MAX))
+		if (Math::Ceiling(SP) < Math::Ceiling(this->SP_MAX))
 		{
 			this->recover_button->Enabled = true;
 		}
@@ -305,7 +306,7 @@ namespace ShieldTest {
 		*/
 
 		// Enemy Attacks
-		if (recover_thread->IsBusy)
+		if (this->recover_thread->IsBusy)
 		{
 			this->HP = Math::Max(this->HP - this->enemy->ATK, 0.0);
 		}
@@ -320,35 +321,43 @@ namespace ShieldTest {
 				this->HP = Math::Max(this->HP + this->SP, 0.0);
 				this->SP = 0.0;
 				this->recover_button->Enabled = false;
-				recover_thread->RunWorkerAsync();
+				this->recover_thread->RunWorkerAsync();
 			}
 		}
 
 		// Enemy's increment format
-		this->enemy->ATK += ATK * 15 / 100;
+		this->enemy->ATK += this->enemy->ATK * 5 / 100;
 		UpdateUI();
 	}
 
 	private: System::Void recover_button_Click(System::Object^  sender, System::EventArgs^  e)
 	{
 		this->recover_button->Enabled = false;
-		if (!recover_thread->IsBusy)
+		if (!this->recover_thread->IsBusy)
 		{
-			recover_thread->RunWorkerAsync();
+			this->recover_thread->RunWorkerAsync();
 		}
 	}
 
 	private: System::Void recover_thread_DoWork(System::Object^  sender, System::ComponentModel::DoWorkEventArgs^  e)
 	{
 		// SP_MAX increment format
-		SP_MAX += (SP_MAX - SP) * 15 / 100;
-		System::Int64 increment = Convert::ToInt64(SP_MAX) / 1500;
+		this->SP_MAX += (this->SP_MAX - this->SP) * 15 / 100;
+		// SP increment format
+		// divided by 1000 to increase every milisecond
+		// Quick-recover formula (squared cubic root)
+		// System::Double increment = cbrt(this->SP_MAX) * cbrt(this->SP_MAX) / 1000;
+		// Square root formula
+		// System::Double increment = sqrt(this->SP_MAX) / 1000;
+		// Cubic root formula
+		System::Double increment = cbrt(this->SP_MAX) / 1000;
+		// Super-slow-recover formula (log2)
+		// System::Double increment = log2(this->SP_MAX) / 1000;
 		while (this->SP < this->SP_MAX)
 		{
-			SP = Math::Min(SP + increment, SP_MAX);
+			this->SP = Math::Min(this->SP + increment, this->SP_MAX);
 
-			recover_thread->ReportProgress((System::Int32)Math::Ceiling(SP / SP_MAX * 100));
-			// Recovering speed
+			this->recover_thread->ReportProgress((System::Int32)Math::Ceiling(this->SP / this->SP_MAX * 100));
 			System::Threading::Thread::Sleep(1);
 		}
 	}
@@ -356,15 +365,15 @@ namespace ShieldTest {
 	private: System::Void recover_thread_ProgressChanged(System::Object^  sender, System::ComponentModel::ProgressChangedEventArgs^  e)
 	{
 		this->shield_bar->Width = e->ProgressPercentage;
-		this->sp_point->Text = (Math::Ceiling(SP) + L"/" + Math::Ceiling(SP_MAX));
+		this->sp_point->Text = (Math::Ceiling(this->SP) + L"/" + Math::Ceiling(this->SP_MAX));
 	}
 
 	private: System::Void heal_button_Click(System::Object^  sender, System::EventArgs^  e)
 	{
 		this->heal_button->Enabled = false;
-		if (!heal_thread->IsBusy)
+		if (!this->heal_thread->IsBusy)
 		{
-			heal_thread->RunWorkerAsync();
+			this->heal_thread->RunWorkerAsync();
 		}
 	}
 
@@ -372,9 +381,9 @@ namespace ShieldTest {
 	{
 		while (this->HP < this->HP_MAX)
 		{
-			HP = Math::Min(++HP, HP_MAX);
+			this->HP = Math::Min(++this->HP, this->HP_MAX);
 
-			heal_thread->ReportProgress((System::Int32)Math::Ceiling(HP / HP_MAX * 100));
+			this->heal_thread->ReportProgress((System::Int32)Math::Ceiling(this->HP / this->HP_MAX * 100));
 			// Healing speed
 			System::Threading::Thread::Sleep(500);
 		}
@@ -383,7 +392,7 @@ namespace ShieldTest {
 	private: System::Void heal_thread_ProgressChanged(System::Object^  sender, System::ComponentModel::ProgressChangedEventArgs^  e)
 	{
 		this->health_bar->Width = e->ProgressPercentage;
-		this->hp_point->Text = (Math::Ceiling(HP) + L"/" + Math::Ceiling(HP_MAX));
+		this->hp_point->Text = (Math::Ceiling(this->HP) + L"/" + Math::Ceiling(this->HP_MAX));
 	}
 };
 }

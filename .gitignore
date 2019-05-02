@@ -1,5 +1,7 @@
 Debug/
 *.tlog
-Debug/vc141.pdb
-*.tlog
-Debug/ShieldTest.tlog/CL.read.1.tlog
+*.pdb
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.txt
