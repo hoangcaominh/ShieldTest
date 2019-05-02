@@ -385,7 +385,7 @@ namespace ShieldTest {
 
 			this->heal_thread->ReportProgress((System::Int32)Math::Ceiling(this->HP / this->HP_MAX * 100));
 			// Healing speed
-			System::Threading::Thread::Sleep(500);
+			System::Threading::Thread::Sleep(200);
 		}
 	}
 			 
